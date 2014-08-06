@@ -12,8 +12,10 @@ Les dépendances à installer sont :
  * [PyRSS2Gen](http://www.dalkescientific.com/Python/PyRSS2Gen.html) : `$ pip install PyRSS2Gen`
    
 Vous devez ensuite ajouter une tâche CRON (`$ crontab -e`) ressemblant à :
+    
     # Scraping LBC
     37  */2     *   *   *   cd $HOME/lbc ; /usr/bin/python $HOME/lbc/lbc.py`
+
 
 Paramétrages
 ------------
