@@ -10,8 +10,9 @@ Les dépendances à installer sont :
  * [requests](http://docs.python-requests.org/en/latest/) : `$ pip install requests`
  * [lxml](http://lxml.de/) : `$ pip install lxml`
  * [PyRSS2Gen](http://www.dalkescientific.com/Python/PyRSS2Gen.html) : `$ pip install PyRSS2Gen`
+ * [sqlite3](https://pysqlite.readthedocs.org/en/latest/sqlite3.html)
    
-Vous devez ensuite ajouter une tâche CRON (`$ crontab -e`) ressemblant à :
+Vous pouvez ensuite ajouter une tâche CRON (`$ crontab -e`) ressemblant à :
     
     # Scraping LBC
     37  */2     *   *   *   cd $HOME/lbc ; /usr/bin/python $HOME/lbc/lbc.py`
