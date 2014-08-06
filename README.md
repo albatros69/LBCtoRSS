@@ -21,7 +21,7 @@ Vous pouvez ensuite ajouter une tâche CRON (`$ crontab -e`) ressemblant à :
 Paramétrages
 ------------
 Pour customiser ce script, il faut d'abord spécifier les recherches dans
-la liste my_searchs. Elle est composée de tuples contenant le titre du
+la liste `my_searchs`. Elle est composée de tuples contenant le titre du
 flux RSS, l'URL de la recherche sur leboncoin.fr et le nom du fichier RSS
 destination.
 
@@ -37,6 +37,6 @@ Ensuite, il va récupérer les annonces dans chacune de ces dernières.
 
 Chacune des annonces est stockée dans une base SQLite. Cela permet de ne pas
 récupérer à chaque exécution l'intégralité des annonces, mais de quand même produire
-à chaque fois un fichier RSS complet. Le fichier SQLite sera stocké au même endroit
-que le script Python.
+un fichier RSS complet. Le fichier SQLite sera stocké au même endroit que le script 
+Python.
 
