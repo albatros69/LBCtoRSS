@@ -33,11 +33,11 @@ def scrape_url(url):
     offers.extend(extract_offers(main_page))
 
     # Handling of next pages via paging links
-    already_seen = {}
+    already_seen = []
     for u in tree.xpath('//ul[@id="paging"]//a/@href'):
         if u in already_seen: continue
     
-        already_seen[u] = 1
+        already_seen.append(u)
         offers.extend(extract_offers(u))
 
     return offers
