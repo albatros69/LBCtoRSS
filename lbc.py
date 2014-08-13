@@ -11,7 +11,7 @@ def extract_offers(url):
     if isinstance(url, requests.Response):
         tree = html.fromstring(url.text)
     else:
-        page = requests.get(url)
+        page = requests.get(url, timeout=2)
         tree = html.fromstring(page.text)
 
     return tree.xpath('//div[@class="list-lbc"]/a/@href')
@@ -26,7 +26,7 @@ conn.execute('CREATE TABLE IF NOT EXISTS offers_seen (id INTEGER PRIMARY KEY, ti
 
 def scrape_url(url):
 
-    main_page = requests.get(url)
+    main_page = requests.get(url, timeout=2)
     tree = html.fromstring(main_page.text)
 
     offers = []
@@ -54,18 +54,21 @@ def scrape_offers(offer_urls):
             article = { 'title': '', 'link': o, 'description': '', 'guid': Guid(o), 'pubDate': datetime.now(), }
             curs.execute('INSERT OR IGNORE INTO offers_seen (id) VALUES (?);', (m.group('id'), ))
             if curs.rowcount > 0:
-                page = requests.get(o)
+                page = requests.get(o, timeout=2)
                 tree = html.fromstring(page.text)
                 for n in tree.xpath('//div[@class="lbcContainer"]//*'):
                     if n.tag == 'h2' and 'id' in n.attrib and n.attrib['id'] == 'ad_subject':
-                        article['title'] = unicode(n.text)
+                        article['title'] = unicode(n.text.strip())
                     elif n.tag == 'th':
-                        article['description'] += u"\n" + unicode(n.text)
+                        article['description'] += u"\n" + unicode(n.text.strip())
                     elif  n.tag == 'td' or \
                          (n.tag == 'span' and 'class' in n.attrib and n.attrib['class'] == 'price'):
-                        article['description'] += unicode(n.text)
+                        article['description'] += unicode(n.text.strip())
                     elif n.tag == 'div' and 'class' in n.attrib and n.attrib['class'] == 'content':
-                        article['description'] += u"\n" + unicode(n.text)
+                        article['description'] += u"\n\n" + unicode(n.text.strip())
+
+                if article['description']:
+                    article['description'] = "<pre>%s</pre>" % (article['description'].strip(), )
 
                 curs.execute('UPDATE offers_seen SET title = ?, link = ?, description = ? WHERE id = ?;',
                     (article['title'], article['link'], article['description'], m.group('id')) )
