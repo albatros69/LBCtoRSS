@@ -66,6 +66,8 @@ def scrape_offers(offer_urls):
                         article['description'] += unicode(n.text.strip())
                     elif n.tag == 'div' and 'class' in n.attrib and n.attrib['class'] == 'content':
                         article['description'] += u"\n\n" + unicode(n.text.strip())
+                    elif n.tag == 'br':
+                        article['description'] += u"\n" + unicode(n.tail.strip())
 
                 if article['description']:
                     article['description'] = "<pre>%s</pre>" % (article['description'].strip(), )
