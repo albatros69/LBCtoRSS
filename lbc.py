@@ -3,6 +3,7 @@
 
 import requests, sqlite3, re
 from datetime import datetime
+from time import sleep
 from lxml import html
 from PyRSS2Gen import RSS2, RSSItem, Guid
 
@@ -34,11 +35,20 @@ def scrape_url(url):
 
     # Handling of next pages via paging links
     already_seen = []
-    for u in tree.xpath('//ul[@id="paging"]//a/@href'):
+    next_pages = list(tree.xpath('//ul[@id="paging"]//a/@href'))
+    errors = 0
+    while next_pages and errors <= 10:
+        u = next_pages.pop(0)
         if u in already_seen: continue
     
-        already_seen.append(u)
-        offers.extend(extract_offers(u))
+        try:
+            offers.extend(extract_offers(u))
+        except requests.exceptions.Timeout:
+            errors += 1
+            sleep(2)
+            next_pages.append(u)
+        else:
+            already_seen.append(u)
 
     return offers
 
