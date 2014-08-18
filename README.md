@@ -15,7 +15,7 @@ Les dépendances à installer sont :
 Vous pouvez ensuite ajouter une tâche CRON (`$ crontab -e`) ressemblant à :
     
     # Scraping LBC
-    37  */2     *   *   *   cd $HOME/lbc ; /usr/bin/python $HOME/lbc/lbc.py`
+    37  */2     *   *   *   cd $HOME/lbc ; /usr/bin/python $HOME/lbc/lbc.py
 
 
 Paramétrages
