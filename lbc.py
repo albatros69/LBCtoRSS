@@ -64,7 +64,14 @@ def scrape_offers(offer_urls):
             article = { 'title': '', 'link': o, 'description': '', 'guid': Guid(o), 'pubDate': datetime.now(), }
             curs.execute('INSERT OR IGNORE INTO offers_seen (id) VALUES (?);', (m.group('id'), ))
             if curs.rowcount > 0:
-                page = requests.get(o, timeout=2)
+                try:
+                    page = requests.get(o, timeout=2)
+                except requests.exceptions.Timeout:
+                    # Pour récupérer l'annonce à la prochaine exécution
+                    curs.execute('DELETE FROM offers_seen WHERE id=?;', (m.group('id'), ))
+                    sleep(2)
+                    continue
+
                 tree = html.fromstring(page.text)
                 for n in tree.xpath('//div[@class="lbcContainer"]//*'):
                     if n.tag == 'h2' and 'id' in n.attrib and n.attrib['id'] == 'ad_subject':
