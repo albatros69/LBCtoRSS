@@ -40,3 +40,9 @@ récupérer à chaque exécution l'intégralité des annonces, mais de quand mê
 un fichier RSS complet. Le fichier SQLite sera stocké au même endroit que le script 
 Python.
 
+Arguments
+--------------
+--ovh
+    Le Bon Coin bloque le range d'ip des serveurs ovh, mais en passant par l'ip et non
+    l'alias DNS il est possible de faire des requétes.
+    Cet argument change donc www.leboncoin.fr par l'ip contenue dans la variable ovh_ip

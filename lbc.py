@@ -6,6 +6,7 @@ from datetime import datetime
 from time import sleep
 from lxml import html
 from PyRSS2Gen import RSS2, RSSItem, Guid
+from docopt import docopt
 
 
 def extract_offers(url):
@@ -26,7 +27,8 @@ conn.execute('CREATE TABLE IF NOT EXISTS offers_seen (id INTEGER PRIMARY KEY, ti
 
 
 def scrape_url(url):
-
+    if arguments['--ovh']:
+        url = url.replace("www.leboncoin.fr", ovh_ip)
     main_page = requests.get(url, timeout=2)
     tree = html.fromstring(main_page.text)
 
@@ -39,6 +41,8 @@ def scrape_url(url):
     errors = 0
     while next_pages and errors <= 10:
         u = next_pages.pop(0)
+        if arguments['--ovh']:
+            u = u.replace("www.leboncoin.fr", ovh_ip)
         if u in already_seen: continue
     
         try:
@@ -58,10 +62,13 @@ def scrape_offers(offer_urls):
     items = []
     for o in offer_urls:
         m = re_id.match(o)
+        if arguments['--ovh']:
+            o = o.replace("www.leboncoin.fr", ovh_ip)
         if not m:
             continue
         else:
             article = { 'title': '', 'link': o, 'description': '', 'guid': Guid(o), 'pubDate': datetime.now(), }
+	    img = u"\n"
             curs.execute('INSERT OR IGNORE INTO offers_seen (id) VALUES (?);', (m.group('id'), ))
             if curs.rowcount > 0:
                 try:
@@ -85,9 +92,16 @@ def scrape_offers(offer_urls):
                         article['description'] += u"\n\n" + unicode(n.text.strip())
                     elif n.tag == 'br' and n.tail:
                         article['description'] += u"\n" + unicode(n.tail.strip())
+		    elif n.tag == 'span' and 'class' in n.attrib and n.attrib['class'] == 'thumbs':
+			img += u"<p><img src=\"" + unicode(n.attrib['style'].split("'")[1].replace('thumbs', 'images')) + u"\"></p>"
 
-                if article['description']:
+                if article['description'] and img:
+                    article['description'] = "<pre>%s\n%s</pre>" % (article['description'].strip(), img.strip(), )
+                elif article['description']:
                     article['description'] = "<pre>%s</pre>" % (article['description'].strip(), )
+
+	        if arguments['--ovh']:
+		    article['link'] = article['link'].replace(ovh_ip, "www.leboncoin.fr")
 
                 curs.execute('UPDATE offers_seen SET title = ?, link = ?, description = ? WHERE id = ?;',
                     (article['title'], article['link'], article['description'], m.group('id')) )
@@ -108,12 +122,28 @@ def scrape_offers(offer_urls):
 
 if __name__ == '__main__':
 
+    help = """LBCtoRSS
+    
+    Usage:
+        lbc.py [--ovh]
+    
+    Options:
+        -h --help     C'est généré automatiquement.
+        --ovh         Change l'url du site le bon coin par une ip accessible depuis un serveur OVH.
+    
+    """
+    
+    arguments = docopt(help)
+    ovh_ip = '193.164.196.13'
+
     my_searchs = [
-        ( u'Locations IdF', 'http://www.leboncoin.fr/locations/offres/ile_de_france/?f=a&th=1&mrs=350&mre=750', 'location_idf.rss'),
-        ( u'Citroën C4 Bourgogne', 'http://www.leboncoin.fr/voitures/offres/bourgogne/?f=a&th=1&q=C4', 'C4_71.rss'),
+	( u'Appartement Lyon 8', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069008', 'Appart_69008.rss'),
+	( u'Appartement Lyon 7', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069007', 'Appart_69007.rss'),
+	( u'Appartement Lyon 3', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069003', 'Appart_69003.rss'),
+	( u'Appartement Lyon 6', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069006', 'Appart_69006.rss'),
     ]
-    RSS_root = '/var/www/html/'
-    URL_root = 'http://www.my_web_site.wtf/'
+    RSS_root = '/var/www/ggwt.eu/lbc/'
+    URL_root = 'http://lbc.ggwt.eu/'
     
     for title, url, filename in my_searchs:
         offers = scrape_url(url)
