@@ -142,8 +142,8 @@ if __name__ == '__main__':
 	( u'Appartement Lyon 3', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069003', 'Appart_69003.rss'),
 	( u'Appartement Lyon 6', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069006', 'Appart_69006.rss'),
     ]
-    RSS_root = '/var/www/ggwt.eu/lbc/'
-    URL_root = 'http://lbc.ggwt.eu/'
+    RSS_root = '/var/www/html/'
+    URL_root = 'http://www.my_web_site.wtf/'
     
     for title, url, filename in my_searchs:
         offers = scrape_url(url)
