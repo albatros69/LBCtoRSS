@@ -68,7 +68,7 @@ def scrape_offers(offer_urls):
             continue
         else:
             article = { 'title': '', 'link': o, 'description': '', 'guid': Guid(o), 'pubDate': datetime.now(), }
-	    img = u"\n"
+            img = ''
             curs.execute('INSERT OR IGNORE INTO offers_seen (id) VALUES (?);', (m.group('id'), ))
             if curs.rowcount > 0:
                 try:
@@ -92,16 +92,16 @@ def scrape_offers(offer_urls):
                         article['description'] += u"\n\n" + unicode(n.text.strip())
                     elif n.tag == 'br' and n.tail:
                         article['description'] += u"\n" + unicode(n.tail.strip())
-		    elif n.tag == 'span' and 'class' in n.attrib and n.attrib['class'] == 'thumbs':
-			img += u"<p><img src=\"" + unicode(n.attrib['style'].split("'")[1].replace('thumbs', 'images')) + u"\"></p>"
+                    elif n.tag == 'span' and 'class' in n.attrib and n.attrib['class'] == 'thumbs':
+                        img = u'<img align="right" src="' + unicode(n.attrib['style'].split("'")[1].replace('thumbs', 'images')) + u'">'
 
                 if article['description'] and img:
-                    article['description'] = "<pre>%s\n%s</pre>" % (article['description'].strip(), img.strip(), )
+                    article['description'] = "%s<pre>%s</pre>" % (article['description'].strip(), img.strip(), )
                 elif article['description']:
                     article['description'] = "<pre>%s</pre>" % (article['description'].strip(), )
 
-	        if arguments['--ovh']:
-		    article['link'] = article['link'].replace(ovh_ip, "www.leboncoin.fr")
+                if arguments['--ovh']:
+                    article['link'] = article['link'].replace(ovh_ip, "www.leboncoin.fr")
 
                 curs.execute('UPDATE offers_seen SET title = ?, link = ?, description = ? WHERE id = ?;',
                     (article['title'], article['link'], article['description'], m.group('id')) )
@@ -137,10 +137,8 @@ if __name__ == '__main__':
     ovh_ip = '193.164.196.13'
 
     my_searchs = [
-	( u'Appartement Lyon 8', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069008', 'Appart_69008.rss'),
-	( u'Appartement Lyon 7', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069007', 'Appart_69007.rss'),
-	( u'Appartement Lyon 3', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069003', 'Appart_69003.rss'),
-	( u'Appartement Lyon 6', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069006', 'Appart_69006.rss'),
+        ( u'Locations IdF', 'http://www.leboncoin.fr/locations/offres/ile_de_france/?f=a&th=1&mrs=350&mre=750', 'location_idf.rss'),
+        ( u'Citroën C4 Bourgogne', 'http://www.leboncoin.fr/voitures/offres/bourgogne/?f=a&th=1&q=C4', 'C4_71.rss'),
     ]
     RSS_root = '/var/www/html/'
     URL_root = 'http://www.my_web_site.wtf/'
