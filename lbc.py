@@ -96,7 +96,7 @@ def scrape_offers(offer_urls):
                         img = u'<img align="right" src="' + unicode(n.attrib['style'].split("'")[1].replace('thumbs', 'images')) + u'">'
 
                 if article['description'] and img:
-                    article['description'] = "%s<pre>%s</pre>" % (article['description'].strip(), img.strip(), )
+                    article['description'] = "%s<pre>%s</pre>" % (img, article['description'].strip(), )
                 elif article['description']:
                     article['description'] = "<pre>%s</pre>" % (article['description'].strip(), )
 
