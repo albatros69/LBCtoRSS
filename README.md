@@ -42,7 +42,7 @@ Python.
 
 Arguments
 --------------
---ovh
-    Le Bon Coin bloque le range d'ip des serveurs ovh, mais en passant par l'ip et non
-    l'alias DNS il est possible de faire des requétes.
-    Cet argument change donc www.leboncoin.fr par l'ip contenue dans la variable ovh_ip
+`--ovh`
+> Le Bon Coin bloque le range d'IP des serveurs ovh, mais en passant par l'ip et non
+> l'alias DNS il est néanmoins possible de faire des requêtes.
+> Cette option change donc www.leboncoin.fr par l'ip contenue dans la variable `ovh_ip`.
