@@ -92,7 +92,7 @@ def scrape_offers(offer_urls):
                         article['description'] += u"\n\n" + unicode(n.text.strip())
                     elif n.tag == 'br' and n.tail:
                         article['description'] += u"\n" + unicode(n.tail.strip())
-                    elif n.tag == 'span' and 'class' in n.attrib and n.attrib['class'] == 'thumbs':
+                    elif not img and n.tag == 'span' and 'class' in n.attrib and n.attrib['class'] == 'thumbs':
                         img = u'<img align="right" src="' + unicode(n.attrib['style'].split("'")[1].replace('thumbs', 'images')) + u'">'
 
                 if article['description'] and img:
