@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import requests, sqlite3, re
+import requests, sqlite3, re, os
 from datetime import datetime
 from time import sleep
 from lxml import html
@@ -146,10 +146,10 @@ if __name__ == '__main__':
     for title, url, filename in my_searchs:
         offers = scrape_url(url)
         rss = RSS2(
-            title = title.encode('utf-8'), link = URL_root + filename, description = title.encode('utf-8'), lastBuildDate = datetime.now(),
+            title = title.encode('utf-8'), link = os.path.join(URL_root, filename), description = title.encode('utf-8'), lastBuildDate = datetime.now(),
             items = [ RSSItem(**article) for article in scrape_offers(offers) ]
         )
-        rss.write_xml(open(RSS_root + filename, "w"), encoding='utf-8')
+        rss.write_xml(open(os.path.join(RSS_root, filename), "w"), encoding='utf-8')
 
     curs.execute("DELETE FROM offers_seen WHERE date < DATETIME('now', '-90 day');")
     curs.execute("VACUUM;")
