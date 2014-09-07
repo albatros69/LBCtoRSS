@@ -69,6 +69,8 @@ def scrape_offers(offer_urls):
         else:
             article = { 'title': '', 'link': o, 'description': '', 'guid': Guid(o), 'pubDate': datetime.now(), }
             img = ''
+            in_descr = False
+
             curs.execute('INSERT OR IGNORE INTO offers_seen (id) VALUES (?);', (m.group('id'), ))
             if curs.rowcount > 0:
                 try:
@@ -83,6 +85,8 @@ def scrape_offers(offer_urls):
                 for n in tree.xpath('//div[@class="lbcContainer"]//*'):
                     if n.tag == 'h2' and 'id' in n.attrib and n.attrib['id'] == 'ad_subject':
                         article['title'] = unicode(n.text.strip())
+                    elif n.tag == 'div' and 'class' in n.attrib and n.attrib['class'] == 'AdviewContent':
+                        in_descr = True
                     elif n.tag == 'th':
                         article['description'] += u"\n" + unicode(n.text.strip())
                     elif  n.tag == 'td' or \
@@ -90,7 +94,7 @@ def scrape_offers(offer_urls):
                         article['description'] += unicode(n.text.strip())
                     elif n.tag == 'div' and 'class' in n.attrib and n.attrib['class'] == 'content':
                         article['description'] += u"\n\n" + unicode(n.text.strip())
-                    elif n.tag == 'br' and n.tail:
+                    elif in_descr and n.tag == 'br' and n.tail:
                         article['description'] += u"\n" + unicode(n.tail.strip())
                     elif not img and n.tag == 'span' and 'class' in n.attrib and n.attrib['class'] == 'thumbs':
                         img = u'<img align="right" src="' + unicode(n.attrib['style'].split("'")[1].replace('thumbs', 'images')) + u'">'
