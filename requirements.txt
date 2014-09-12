@@ -1,0 +1,4 @@
+PyRSS2Gen
+requests
+lxml
+docopt
