@@ -8,8 +8,9 @@ Installation
 Il suffit de récupérer le script (par clonage du dépôt github par exemple).
 Les dépendances à installer sont :
  * [requests](http://docs.python-requests.org/en/latest/) : `$ pip install requests`
- * [lxml](http://lxml.de/) : `$ pip install lxml`
+ * [lxml](http://lxml.de/) : `$ pip install lxml` (cela peut nécessiter l'installation des librairies xml et xlst, typiquement sous debian `$ sudo apt-get install libxml2-dev libxslt-dev`)
  * [PyRSS2Gen](http://www.dalkescientific.com/Python/PyRSS2Gen.html) : `$ pip install PyRSS2Gen`
+ * [docopt](http://docopt.org/) : `$ pip install docopt`
  * [sqlite3](https://pysqlite.readthedocs.org/en/latest/sqlite3.html)
    
 Vous pouvez ensuite ajouter une tâche CRON (`$ crontab -e`) ressemblant à :
