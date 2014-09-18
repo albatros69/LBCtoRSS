@@ -12,7 +12,8 @@ Les dépendances à installer sont :
  * [PyRSS2Gen](http://www.dalkescientific.com/Python/PyRSS2Gen.html) : `$ pip install PyRSS2Gen`
  * [docopt](http://docopt.org/) : `$ pip install docopt`
  * [sqlite3](https://pysqlite.readthedocs.org/en/latest/sqlite3.html)
-ou plus simplement : `pip install -r requirements.txt`
+
+ou plus simplement : `$ pip install -r requirements.txt`
 
 Vous pouvez ensuite ajouter une tâche CRON (`$ crontab -e`) ressemblant à :
     
