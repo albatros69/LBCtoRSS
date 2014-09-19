@@ -7,7 +7,23 @@ from time import sleep
 from lxml import html
 from PyRSS2Gen import RSS2, RSSItem, Guid
 from docopt import docopt
+import ConfigParser
 
+
+config = ConfigParser.ConfigParser()
+config.read("lbc.conf")
+my_searchs = []
+
+for s in config.sections():
+    if s == 'Web':
+        RSS_root = config.get(s, 'Directory')
+        URL_root = config.get(s, 'Url')
+    else:
+        File = s
+        Name = config.get(s, 'Name')
+        Link = config.get(s, 'Link')
+        search = (Name, Link, File)
+        my_searchs.append(search)
 
 def extract_offers(url):
     if isinstance(url, requests.Response):
@@ -140,12 +156,14 @@ if __name__ == '__main__':
     arguments = docopt(help)
     ovh_ip = '193.164.196.13'
 
-    my_searchs = [
-        ( u'Locations IdF', 'http://www.leboncoin.fr/locations/offres/ile_de_france/?f=a&th=1&mrs=350&mre=750', 'location_idf.rss'),
-        ( u'Citroën C4 Bourgogne', 'http://www.leboncoin.fr/voitures/offres/bourgogne/?f=a&th=1&q=C4', 'C4_71.rss'),
-    ]
-    RSS_root = '/var/www/html/'
-    URL_root = 'http://www.my_web_site.wtf/'
+#    my_searchs = [
+#			( u'Appartement Lyon 8', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069008', 'Appart_69008.rss'),
+#		    ( u'Appartement Lyon 7', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069007', 'Appart_69007.rss'),
+#		    ( u'Appartement Lyon 3', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069003', 'Appart_69003.rss'),
+#		    ( u'Appartement Lyon 6', 'http://www.leboncoin.fr/ventes_immobilieres/offres/rhone_alpes/?f=a&th=1&ps=6&pe=9&sqs=7&ros=3&location=Lyon%2069006', 'Appart_69006.rss'),
+#    ]
+#    RSS_root = '/var/www/ggwt.eu/lbc/'
+#    URL_root = 'http://lbc.ggwt.eu/'
     
     for title, url, filename in my_searchs:
         offers = scrape_url(url)
