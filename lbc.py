@@ -128,6 +128,7 @@ if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
     config.read("lbc.conf")
     my_searchs = []
+    ovhServer = False
     
     for s in config.sections():
         if s == 'Conf':
@@ -138,10 +139,9 @@ if __name__ == '__main__':
             ovhIp = config.get(s, 'Ip')
         else:
             File = s
-            Name = config.get(s, 'Name')
+            Name = config.get(s, 'Name').decode('utf-8')
             Link = config.get(s, 'Link')
-            search = (Name, Link, File)
-            my_searchs.append(search)
+            my_searchs.append( (Name, Link, File, ) )
 
     for title, url, filename in my_searchs:
         offers = scrape_url(url)
