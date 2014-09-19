@@ -6,7 +6,6 @@ from datetime import datetime
 from time import sleep
 from lxml import html
 from PyRSS2Gen import RSS2, RSSItem, Guid
-from docopt import docopt
 import ConfigParser
 
 def extract_offers(url):
@@ -27,8 +26,8 @@ conn.execute('CREATE TABLE IF NOT EXISTS offers_seen (id INTEGER PRIMARY KEY, ti
 
 
 def scrape_url(url):
-    if arguments['--ovh']:
-        url = url.replace("www.leboncoin.fr", ovh_ip)
+    if ovhServer:
+        url = url.replace("www.leboncoin.fr", ovhIp)
     main_page = requests.get(url, timeout=2)
     tree = html.fromstring(main_page.text)
 
@@ -41,8 +40,8 @@ def scrape_url(url):
     errors = 0
     while next_pages and errors <= 10:
         u = next_pages.pop(0)
-        if arguments['--ovh']:
-            u = u.replace("www.leboncoin.fr", ovh_ip)
+        if ovhServer:
+            u = u.replace("www.leboncoin.fr", ovhIp)
         if u in already_seen: continue
     
         try:
@@ -62,8 +61,8 @@ def scrape_offers(offer_urls):
     items = []
     for o in offer_urls:
         m = re_id.match(o)
-        if arguments['--ovh']:
-            o = o.replace("www.leboncoin.fr", ovh_ip)
+        if ovhServer:
+            o = o.replace("www.leboncoin.fr", ovhIp)
         if not m:
             continue
         else:
@@ -104,8 +103,8 @@ def scrape_offers(offer_urls):
                 elif article['description']:
                     article['description'] = "<pre>%s</pre>" % (article['description'].strip(), )
 
-                if arguments['--ovh']:
-                    article['link'] = article['link'].replace(ovh_ip, "www.leboncoin.fr")
+                if ovhServer:
+                    article['link'] = article['link'].replace(ovhIp, "www.leboncoin.fr")
 
                 curs.execute('UPDATE offers_seen SET title = ?, link = ?, description = ? WHERE id = ?;',
                     (article['title'], article['link'], article['description'], m.group('id')) )
@@ -126,28 +125,17 @@ def scrape_offers(offer_urls):
 
 if __name__ == '__main__':
 
-    help = """LBCtoRSS
-    
-    Usage:
-        lbc.py [--ovh]
-    
-    Options:
-        -h --help     C'est généré automatiquement.
-        --ovh         Change l'url du site le bon coin par une ip accessible depuis un serveur OVH.
-    
-    """
-    
-    arguments = docopt(help)
-    ovh_ip = '193.164.196.13'
-
     config = ConfigParser.ConfigParser()
     config.read("lbc.conf")
     my_searchs = []
     
     for s in config.sections():
-        if s == 'Web':
+        if s == 'Conf':
             RSS_root = config.get(s, 'Directory')
             URL_root = config.get(s, 'Url')
+        elif s == 'Ovh':
+            ovhServer = True
+            ovhIp = config.get(s, 'Ip')
         else:
             File = s
             Name = config.get(s, 'Name')
