@@ -4,16 +4,17 @@
 import requests, sqlite3, re, os
 from datetime import datetime
 from time import sleep
-from lxml import html
+from lxml.html import fromstring
+from lxml.etree import tostring
 from PyRSS2Gen import RSS2, RSSItem, Guid
-import ConfigParser
+from ConfigParser import ConfigParser
 
 def extract_offers(url):
     if isinstance(url, requests.Response):
-        tree = html.fromstring(url.text)
+        tree = fromstring(url.text)
     else:
         page = requests.get(url, timeout=2)
-        tree = html.fromstring(page.text)
+        tree = fromstring(page.text)
 
     return tree.xpath('//div[@class="list-lbc"]/a/@href')
 
@@ -29,7 +30,7 @@ def scrape_url(url):
     if ovhServer:
         url = url.replace("www.leboncoin.fr", ovhIp)
     main_page = requests.get(url, timeout=2)
-    tree = html.fromstring(main_page.text)
+    tree = fromstring(main_page.text)
 
     offers = []
     offers.extend(extract_offers(main_page))
@@ -80,14 +81,14 @@ def scrape_offers(offer_urls):
                     sleep(2)
                     continue
 
-                tree = html.fromstring(page.text)
+                tree = fromstring(page.text)
                 for n in tree.xpath('//div[@class="lbcContainer"]//*'):
                     if n.tag == 'h2' and 'id' in n.attrib and n.attrib['id'] == 'ad_subject':
                         article['title'] = unicode(n.text.strip())
                     elif n.tag == 'div' and 'class' in n.attrib and n.attrib['class'] == 'AdviewContent':
                         in_descr = True
                     elif n.tag == 'th':
-                        article['description'] += u"\n" + unicode(n.text.strip())
+                        article['description'] += u"\n" + unicode(n.text.strip()) + ' '
                     elif  n.tag == 'td' or \
                          (n.tag == 'span' and 'class' in n.attrib and n.attrib['class'] == 'price'):
                         article['description'] += unicode(n.text.strip())
@@ -95,11 +96,13 @@ def scrape_offers(offer_urls):
                         article['description'] += u"\n\n" + unicode(n.text.strip())
                     elif in_descr and n.tag == 'br' and n.tail:
                         article['description'] += u"\n" + unicode(n.tail.strip())
-                    elif not img and n.tag == 'span' and 'class' in n.attrib and n.attrib['class'] == 'thumbs':
-                        img = u'<img align="right" src="' + unicode(n.attrib['style'].split("'")[1].replace('thumbs', 'images')) + u'">'
+                    elif not img and n.tag == 'div' and 'class' in n.attrib and n.attrib['class'] == 'print-image1':
+                        child = n.find('img')
+                        child.attrib['align'] = 'right'
+                        img = tostring(child, method='html')
 
                 if article['description'] and img:
-                    article['description'] = "%s<pre>%s</pre>" % (img, article['description'].strip(), )
+                    article['description'] = "%s<pre>%s</pre>" % (img.strip(), article['description'].strip(), )
                 elif article['description']:
                     article['description'] = "<pre>%s</pre>" % (article['description'].strip(), )
 
@@ -125,7 +128,7 @@ def scrape_offers(offer_urls):
 
 if __name__ == '__main__':
 
-    config = ConfigParser.ConfigParser()
+    config = ConfigParser()
     config.read("lbc.conf")
     my_searchs = []
     ovhServer = False
@@ -151,7 +154,7 @@ if __name__ == '__main__':
         )
         rss.write_xml(open(os.path.join(RSS_root, filename), "w"), encoding='utf-8')
 
-    curs.execute("DELETE FROM offers_seen WHERE date < DATETIME('now', '-90 day');")
+    curs.execute("DELETE FROM offers_seen WHERE date < DATETIME('now', '-61 day');")
     curs.execute("VACUUM;")
     conn.commit()
     conn.close()
