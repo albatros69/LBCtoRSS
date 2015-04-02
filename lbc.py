@@ -83,13 +83,13 @@ def scrape_offers(offer_urls):
 
                 tree = fromstring(page.text)
                 for n in tree.xpath('//div[@class="lbcContainer"]//*'):
-                    if n.tag == 'h2' and 'id' in n.attrib and n.attrib['id'] == 'ad_subject':
+                    if (n.tag == 'h1' or n.tag == 'h2') and 'id' in n.attrib and n.attrib['id'] == 'ad_subject':
                         article['title'] = unicode(n.text.strip())
                     elif n.tag == 'div' and 'class' in n.attrib and n.attrib['class'] == 'AdviewContent':
                         in_descr = True
-                    elif n.tag == 'th':
+                    elif n.tag == 'th' and n.text:
                         article['description'] += u"\n" + unicode(n.text.strip()) + ' '
-                    elif  n.tag == 'td' or \
+                    elif (n.tag == 'td' and n.text) or \
                          (n.tag == 'span' and 'class' in n.attrib and n.attrib['class'] == 'price'):
                         article['description'] += unicode(n.text.strip())
                     elif n.tag == 'div' and 'class' in n.attrib and n.attrib['class'] == 'content':
