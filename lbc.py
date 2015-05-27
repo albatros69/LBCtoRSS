@@ -81,6 +81,10 @@ def scrape_offers(offer_urls):
                     sleep(2)
                     continue
 
+                if page.status_code != 200:
+                    curs.execute('DELETE FROM offers_seen WHERE id=?;', (id_offer, ))
+                    continue
+
                 tree = fromstring(page.text)
                 for n in tree.xpath('//div[@class="lbcContainer"]//*'):
                     if (n.tag == 'h1' or n.tag == 'h2') and 'id' in n.attrib and n.attrib['id'] == 'ad_subject':
