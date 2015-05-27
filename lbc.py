@@ -44,7 +44,7 @@ def scrape_url(url):
         if ovhServer:
             u = u.replace("www.leboncoin.fr", ovhIp)
         if u in already_seen: continue
-    
+
         try:
             offers.extend(extract_offers(u))
         except requests.exceptions.Timeout:
@@ -67,17 +67,18 @@ def scrape_offers(offer_urls):
         if not m:
             continue
         else:
+            id_offer = m.group('id')
             article = { 'title': '', 'link': o, 'description': '', 'guid': Guid(o), 'pubDate': datetime.now(), }
             img = ''
             in_descr = False
 
-            curs.execute('INSERT OR IGNORE INTO offers_seen (id) VALUES (?);', (m.group('id'), ))
+            curs.execute('INSERT OR IGNORE INTO offers_seen (id) VALUES (?);', (id_offer, ))
             if curs.rowcount > 0:
                 try:
                     page = requests.get(o, timeout=2)
                 except requests.exceptions.Timeout:
                     # Pour récupérer l'annonce à la prochaine exécution
-                    curs.execute('DELETE FROM offers_seen WHERE id=?;', (m.group('id'), ))
+                    curs.execute('DELETE FROM offers_seen WHERE id=?;', (id_offer, ))
                     sleep(2)
                     continue
 
@@ -114,9 +115,9 @@ def scrape_offers(offer_urls):
                     article['link'] = article['link'].replace(ovhIp, "www.leboncoin.fr")
 
                 curs.execute('UPDATE offers_seen SET title = ?, link = ?, description = ? WHERE id = ?;',
-                    (article['title'], article['link'], article['description'], m.group('id')) )
+                    (article['title'], article['link'], article['description'], id_offer) )
             else:
-                curs.execute('SELECT title, description, date FROM offers_seen WHERE id = ?;', (m.group('id'), ))
+                curs.execute('SELECT title, description, date FROM offers_seen WHERE id = ?;', (id_offer, ))
                 for title, description, date in curs:
                     article['title'] = title
                     #article['link'] = o
@@ -136,7 +137,7 @@ if __name__ == '__main__':
     config.read("lbc.conf")
     my_searchs = []
     ovhServer = False
-    
+
     for s in config.sections():
         if s == 'Conf':
             RSS_root = config.get(s, 'Directory')
