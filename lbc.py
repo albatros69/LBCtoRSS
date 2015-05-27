@@ -154,7 +154,5 @@ if __name__ == '__main__':
         )
         rss.write_xml(open(os.path.join(RSS_root, filename), "w"), encoding='utf-8')
 
-    curs.execute("DELETE FROM offers_seen WHERE date < DATETIME('now', '-61 day');")
-    curs.execute("VACUUM;")
     conn.commit()
     conn.close()
