@@ -10,13 +10,16 @@ from PyRSS2Gen import RSS2, RSSItem, Guid
 from ConfigParser import ConfigParser
 
 def extract_offers(url):
-    if isinstance(url, requests.Response):
-        tree = fromstring(url.text)
+    try:
+        if isinstance(url, requests.Response):
+            tree = fromstring(url.text)
+        else:
+            page = requests.get(url, timeout=2)
+            tree = fromstring(page.text)
+    except:
+        return []
     else:
-        page = requests.get(url, timeout=2)
-        tree = fromstring(page.text)
-
-    return tree.xpath('//div[@class="list-lbc"]/a/@href')
+        return tree.xpath('//div[@class="list-lbc"]/a/@href')
 
 
 re_id = re.compile('.*/(?P<id>[0-9]+)\.htm.*')
