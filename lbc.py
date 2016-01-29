@@ -46,6 +46,9 @@ def scrape_url(url):
         u = next_pages.pop(0)
         if ovhServer:
             u = u.replace("www.leboncoin.fr", ovhIp)
+        if not u.startswith('http'):
+            u = 'https:' + u
+
         if u in already_seen: continue
 
         try:
@@ -65,8 +68,12 @@ def scrape_offers(offer_urls):
     items = []
     for o in offer_urls:
         m = re_id.match(o)
+
         if ovhServer:
             o = o.replace("www.leboncoin.fr", ovhIp)
+        if not u.startswith('http'):
+            u = 'https:' + u
+
         if not m:
             continue
         else:
