@@ -19,7 +19,7 @@ def extract_offers(url):
     except:
         return []
     else:
-        return tree.xpath('//div[@class="list-lbc"]/a/@href')
+        return tree.xpath('//section[contains(@class, "tabsContent")]//a[contains(@class, "list_item")]/@href')
 
 
 re_id = re.compile('.*/(?P<id>[0-9]+)\.htm.*')
@@ -40,7 +40,7 @@ def scrape_url(url):
 
     # Handling of next pages via paging links
     already_seen = []
-    next_pages = list(tree.xpath('//ul[@id="paging"]//a/@href'))
+    next_pages = list(tree.xpath('//div[contains(@class, "pagination_links_container")]//a/@href'))
     errors = 0
     while next_pages and errors <= 10:
         u = next_pages.pop(0)
@@ -48,7 +48,6 @@ def scrape_url(url):
             u = u.replace("www.leboncoin.fr", ovhIp)
         if not u.startswith('http'):
             u = 'https:' + u
-
         if u in already_seen: continue
 
         try:
@@ -68,12 +67,10 @@ def scrape_offers(offer_urls):
     items = []
     for o in offer_urls:
         m = re_id.match(o)
-
         if ovhServer:
             o = o.replace("www.leboncoin.fr", ovhIp)
-        if not u.startswith('http'):
-            u = 'https:' + u
-
+        if not o.startswith('http'):
+            o = 'https:' + o
         if not m:
             continue
         else:
@@ -97,24 +94,23 @@ def scrape_offers(offer_urls):
                     continue
 
                 tree = fromstring(page.text)
-                for n in tree.xpath('//div[@class="lbcContainer"]//*'):
-                    if (n.tag == 'h1' or n.tag == 'h2') and 'id' in n.attrib and n.attrib['id'] == 'ad_subject':
+                for n in tree.xpath('//section[@id="adview"]//*'):
+                    if (n.tag == 'h1' or n.tag == 'h2') and 'class' in n.attrib and 'no-border' in n.attrib['class']:
                         article['title'] = unicode(n.text.strip())
-                    elif n.tag == 'div' and 'class' in n.attrib and n.attrib['class'] == 'AdviewContent':
+                    elif n.tag == 'p' and 'itemprop' in n.attrib and n.attrib['itemprop'] == 'description':
                         in_descr = True
-                    elif n.tag == 'th' and n.text:
-                        article['description'] += u"\n" + unicode(n.text.strip()) + ' '
-                    elif (n.tag == 'td' and n.text) or \
-                         (n.tag == 'span' and 'class' in n.attrib and n.attrib['class'] == 'price'):
-                        article['description'] += unicode(n.text.strip())
-                    elif n.tag == 'div' and 'class' in n.attrib and n.attrib['class'] == 'content':
                         article['description'] += u"\n\n" + unicode(n.text.strip())
                     elif in_descr and n.tag == 'br' and n.tail:
                         article['description'] += u"\n" + unicode(n.tail.strip())
-                    elif not img and n.tag == 'div' and 'class' in n.attrib and n.attrib['class'] == 'print-image1':
+                    elif n.tag == 'h2' and 'itemprop' in n.attrib and n.attrib['itemprop'] == 'price':
+                        article['description'] += u"Prix : " + unicode(n.attrib['content'].strip()) + u"€"
+                    elif n.tag == 'span' and 'itemprop' in n.attrib and n.attrib['itemprop'] == 'address':
+                        article['description'] += u"\nAdresse : " + unicode(n.text.strip())
+                    elif not img and n.tag == 'div' and 'class' in n.attrib and 'item_image' in n.attrib['class']:
                         child = n.find('img')
-                        child.attrib['align'] = 'right'
-                        img = tostring(child, method='html')
+                        if child is not None:
+                            child.attrib['align'] = 'right'
+                            img = tostring(child, method='html')
 
                 if article['description'] and img:
                     article['description'] = "%s<pre>%s</pre>" % (img.strip(), article['description'].strip(), )
