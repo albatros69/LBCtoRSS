@@ -97,11 +97,16 @@ def scrape_offers(offer_urls):
                 for n in tree.xpath('//section[@id="adview"]//*'):
                     if (n.tag == 'h1' or n.tag == 'h2') and 'class' in n.attrib and 'no-border' in n.attrib['class']:
                         article['title'] = unicode(n.text.strip())
+                    elif n.tag == 'p' and 'id' in n.attrib and n.attrib['id'] == 'description':
+                        in_descr = True
+                        article['description'] += u"\n\n" + unicode(n.text.strip())
                     elif n.tag == 'p' and 'itemprop' in n.attrib and n.attrib['itemprop'] == 'description':
                         in_descr = True
                         article['description'] += u"\n\n" + unicode(n.text.strip())
                     elif in_descr and n.tag == 'br' and n.tail:
                         article['description'] += u"\n" + unicode(n.tail.strip())
+                    elif n.tag == 'p' and 'id' in n.attrib and n.attrib['id'] == 'description_truncated':
+                        in_descr = False
                     elif n.tag == 'h2' and 'itemprop' in n.attrib and n.attrib['itemprop'] == 'price':
                         article['description'] += u"Prix : " + unicode(n.attrib['content'].strip()) + u"€"
                     elif n.tag == 'span' and 'itemprop' in n.attrib and n.attrib['itemprop'] == 'address':
