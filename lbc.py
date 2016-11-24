@@ -121,11 +121,9 @@ def scrape_offers(offer_urls):
                         article['description'] += u"Prix : " + unicode(n.attrib['content'].strip()) + u"€"
                     elif n.tag == 'span' and 'itemprop' in n.attrib and n.attrib['itemprop'] == 'address':
                         article['description'] += u"\nAdresse : " + unicode(n.text.strip())
-                    elif not img and n.tag == 'div' and 'class' in n.attrib and 'item_image' in n.attrib['class']:
-                        child = n.find('img')
-                        if child is not None:
-                            child.attrib['align'] = 'right'
-                            img = tostring(child, method='html')
+                    elif not img and n.tag == 'div' and 'class' in n.attrib and 'item_image' in n.attrib['class'] \
+                        and 'data-popin-content' in n.attrib:
+                        img = '<img src="%s" align="right" />' % n.attrib['data-popin-content'].replace('large', 'image')
 
                 if article['description'] and img:
                     article['description'] = "%s<pre>%s</pre>" % (img.strip(), article['description'].strip(), )
