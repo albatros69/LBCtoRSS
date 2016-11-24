@@ -8,6 +8,16 @@ from lxml.html import fromstring
 from lxml.etree import tostring
 from PyRSS2Gen import RSS2, RSSItem, Guid
 from ConfigParser import ConfigParser
+import logging, logging.handlers
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.handlers.SysLogHandler(facility=logging.handlers.SysLogHandler.LOG_USER, address='/dev/log')
+formatter = logging.Formatter('%(module)s: %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
 
 def extract_offers(url):
     try:
@@ -162,6 +172,7 @@ if __name__ == '__main__':
             Link = config.get(s, 'Link')
             my_searchs.append( (Name, Link, File, ) )
 
+    logger.info("Démarrage...")
     for title, url, filename in my_searchs:
         offers = scrape_url(url)
         rss = RSS2(
@@ -172,3 +183,4 @@ if __name__ == '__main__':
 
     conn.commit()
     conn.close()
+    logger.info("Fin...")
