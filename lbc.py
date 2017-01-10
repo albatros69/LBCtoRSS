@@ -75,6 +75,7 @@ def scrape_url(url):
 def scrape_offers(offer_urls):
 
     items = []
+    new_offers = 0
     for o in offer_urls:
         m = re_id.match(o)
         if ovhServer:
@@ -102,6 +103,8 @@ def scrape_offers(offer_urls):
                 if page.status_code != 200:
                     curs.execute('DELETE FROM offers_seen WHERE id=?;', (id_offer, ))
                     continue
+
+                new_offers += 1
 
                 tree = fromstring(page.text)
                 for n in tree.xpath('//section[@id="adview"]//*'):
@@ -147,7 +150,7 @@ def scrape_offers(offer_urls):
             items.append(article)
 
     conn.commit()
-    return items
+    return new_offers, items
 
 
 if __name__ == '__main__':
@@ -172,10 +175,11 @@ if __name__ == '__main__':
 
     logger.info("Démarrage...")
     for title, url, filename in my_searchs:
-        offers = scrape_url(url)
+        new, offers = scrape_offers(scrape_url(url))
+        logger.info("%s : %d nouvelle(s) annonce(s)" % (title, new))
         rss = RSS2(
             title = title.encode('utf-8'), link = os.path.join(URL_root, filename), description = title.encode('utf-8'), lastBuildDate = datetime.now(),
-            items = [ RSSItem(**article) for article in scrape_offers(offers) ]
+            items = [ RSSItem(**article) for article in offers ]
         )
         rss.write_xml(open(os.path.join(RSS_root, filename), "w"), encoding='utf-8')
 
