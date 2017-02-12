@@ -26,7 +26,8 @@ def extract_offers(url):
         else:
             page = requests.get(url, timeout=2)
             tree = fromstring(page.text)
-    except:
+    except Exception as e:
+        logger.exception(e)
         return []
     else:
         return tree.xpath('//section[contains(@class, "tabsContent")]//a[contains(@class, "list_item")]/@href')
@@ -42,7 +43,11 @@ conn.execute('CREATE TABLE IF NOT EXISTS offers_seen (id INTEGER PRIMARY KEY, ti
 def scrape_url(url):
     if ovhServer:
         url = url.replace("www.leboncoin.fr", ovhIp)
-    main_page = requests.get(url, timeout=2)
+    try:
+        main_page = requests.get(url, timeout=2)
+    except Exception as e:
+        logger.exception(e)
+        return []
     tree = fromstring(main_page.text)
 
     offers = []
