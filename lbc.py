@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import requests, sqlite3, re, os
+from random import random, choice
 from datetime import datetime
 from time import sleep
 from lxml.html import fromstring
@@ -19,16 +20,60 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
+user_agents = (
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/602.3.12 (KHTML, like Gecko) Version/10.0.2 Safari/602.3.12',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0',
+    'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/602.4.8 (KHTML, like Gecko) Version/10.0.3 Safari/602.4.8',
+    'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0',
+    'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0',
+    'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+    'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.0',
+    'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.79 Safari/537.36 Edge/14.14393',
+    'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:51.0) Gecko/20100101 Firefox/51.0',
+    'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:50.0) Gecko/20100101 Firefox/50.0',
+    'Mozilla/5.0 (X11; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:51.0) Gecko/20100101 Firefox/51.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.76 Safari/537.36',
+)
+def req_headers():
+    return { 'User-Agent': choice(user_agents) }
+
+
 def extract_offers(url):
     try:
         if isinstance(url, requests.Response):
             tree = fromstring(url.text)
         else:
-            page = requests.get(url, timeout=2)
+            sleep(2*random())
+            page = requests.get(url, headers=req_headers(), timeout=2)
             tree = fromstring(page.text)
     except Exception as e:
-        logger.exception(e)
-        return []
+        #logger.info(url)
+        #logger.exception(e)
+        #return []
+        raise
     else:
         return tree.xpath('//section[contains(@class, "tabsContent")]//a[contains(@class, "list_item")]/@href')
 
@@ -44,10 +89,12 @@ def scrape_url(url):
     if ovhServer:
         url = url.replace("www.leboncoin.fr", ovhIp)
     try:
-        main_page = requests.get(url, timeout=2)
+        main_page = requests.get(url, headers=req_headers(), timeout=5)
     except Exception as e:
-        logger.exception(e)
+        logger.info('Timeout ### %s' % (url,) )
+        #logger.exception(e)
         return []
+
     tree = fromstring(main_page.text)
 
     offers = []
@@ -69,7 +116,8 @@ def scrape_url(url):
             offers.extend(extract_offers(u))
         except requests.exceptions.Timeout:
             errors += 1
-            sleep(2)
+            sleep(2*random())
+            logger.info("Timeout %d ### %s" % (errors, u))
             next_pages.append(u)
         else:
             already_seen.append(u)
@@ -98,11 +146,12 @@ def scrape_offers(offer_urls):
             curs.execute('INSERT OR IGNORE INTO offers_seen (id) VALUES (?);', (id_offer, ))
             if curs.rowcount > 0:
                 try:
-                    page = requests.get(o, timeout=2)
+                    page = requests.get(o, headers=req_headers(), timeout=5)
                 except requests.exceptions.Timeout:
                     # Pour récupérer l'annonce à la prochaine exécution
                     curs.execute('DELETE FROM offers_seen WHERE id=?;', (id_offer, ))
-                    sleep(2)
+                    logger.info('Timeout offer ### %s' % (o, ))
+                    sleep(2*random())
                     continue
 
                 if page.status_code != 200:
@@ -191,3 +240,4 @@ if __name__ == '__main__':
     conn.commit()
     conn.close()
     logger.info("Fin...")
+
