@@ -140,6 +140,8 @@ def scrape_offers(offer_urls):
         else:
             id_offer = m.group('id')
             article = { 'title': '', 'link': o, 'description': '', 'guid': Guid(o), 'pubDate': datetime.now(), }
+            prix = ''
+            adresse = ''
             img = ''
             in_descr = False
 
@@ -161,27 +163,28 @@ def scrape_offers(offer_urls):
                 new_offers += 1
 
                 tree = fromstring(page.text)
-                for n in tree.xpath('//section[@id="adview"]//*'):
-                    if (n.tag == 'h1' or n.tag == 'h2') and 'class' in n.attrib and 'no-border' in n.attrib['class']:
-                        article['title'] = unicode(n.text.strip())
-                    elif n.tag == 'p' and 'id' in n.attrib and n.attrib['id'] == 'description':
-                        in_descr = True
-                        article['description'] += u"\n\n" + unicode(n.text.strip())
-                    elif n.tag == 'p' and 'itemprop' in n.attrib and n.attrib['itemprop'] == 'description':
-                        in_descr = True
-                        article['description'] += u"\n\n" + unicode(n.text.strip())
-                    elif in_descr and n.tag == 'br' and n.tail:
-                        article['description'] += u"\n" + unicode(n.tail.strip())
-                    elif n.tag == 'p' and 'id' in n.attrib and n.attrib['id'] == 'description_truncated':
-                        in_descr = False
-                    elif n.tag == 'h2' and 'itemprop' in n.attrib and n.attrib['itemprop'] == 'price':
-                        article['description'] += u"Prix : " + unicode(n.attrib['content'].strip()) + u"€"
-                    elif n.tag == 'span' and 'itemprop' in n.attrib and n.attrib['itemprop'] == 'address':
-                        article['description'] += u"\nAdresse : " + unicode(n.text.strip())
-                    elif not img and n.tag == 'div' and 'class' in n.attrib and 'item_image' in n.attrib['class'] \
-                        and 'data-popin-content' in n.attrib:
-                        img = '<img src="%s" align="right" />' % n.attrib['data-popin-content'].replace('large', 'image')
+                for n in tree.xpath('//section[@class="OjX8R"]//*'):
+                    if (n.tag == 'div') and 'data-qa-id' in n.attrib and n.attrib['data-qa-id'] == "adview_title":
+                        article['title'] = unicode(n.text_content().strip())
+                    elif n.tag == 'div' and 'data-qa-id' in n.attrib and n.attrib['data-qa-id'] == 'adview_description_container':
+                        descr = n.find('div').find('span')
+                        article['description'] += "\n"+ unicode(descr.text.strip())
+                        for l in descr:
+                            if l.text:
+                                article['description'] += "\n"+ unicode(l.text.strip())
+                            elif l.tail:
+                                article['description'] += "\n" + unicode(l.tail.strip())
+                    elif n.tag == 'div' and 'data-qa-id' in n.attrib and n.attrib['data-qa-id'] == 'adview_price':
+                        prix = u"Prix : " + unicode(n.text_content().strip())
+                    elif n.tag == 'div' and 'data-qa-id' in n.attrib and n.attrib['data-qa-id'] == 'adview_location_informations':
+                        adresse = u"Adresse : " + unicode(n.find('span').text_content().strip())
+                    elif not img and n.tag == 'img' and 'alt' in n.attrib and n.attrib['alt'].startswith("image-galerie"):
+                        img = '<img src="%s" align="right" />' % n.attrib['src']
 
+                if adresse:
+                    article['description'] = adresse + "\n" + article['description']
+                if prix:
+                    article['description'] = prix + "\n" + article['description']
                 if article['description'] and img:
                     article['description'] = "%s<pre>%s</pre>" % (img.strip(), article['description'].strip(), )
                 elif article['description']:
@@ -235,7 +238,8 @@ if __name__ == '__main__':
             title = title.encode('utf-8'), link = os.path.join(URL_root, filename), description = title.encode('utf-8'), lastBuildDate = datetime.now(),
             items = [ RSSItem(**article) for article in offers ]
         )
-        rss.write_xml(open(os.path.join(RSS_root, filename), "w"), encoding='utf-8')
+        with open(os.path.join(RSS_root, filename), "w") as fic:
+            rss.write_xml(fic, encoding='utf-8')
 
     conn.commit()
     conn.close()
