@@ -7,8 +7,8 @@ Url: http://www.my_web_site.wtf/
 
 [location_idf.rss]
 Name: Locations IdF
-Link: http://www.leboncoin.fr/locations/offres/ile_de_france/?f=a&th=1&mrs=350&mre=750
+Link: https://www.leboncoin.fr/locations/offres/ile_de_france/?f=a&th=1&mrs=350&mre=750
 
 [C4_71.rss]
 Name: Citroën C4 Bourgogne
-Link: http://www.leboncoin.fr/voitures/offres/bourgogne/?f=a&th=1&q=C4
+Link: https://www.leboncoin.fr/voitures/offres/bourgogne/?f=a&th=1&q=C4
