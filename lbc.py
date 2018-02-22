@@ -6,7 +6,6 @@ from random import random, choice
 from datetime import datetime
 from time import sleep
 from lxml.html import fromstring
-from lxml.etree import tostring
 from PyRSS2Gen import RSS2, RSSItem, Guid
 from ConfigParser import ConfigParser
 import logging, logging.handlers
