@@ -2,6 +2,10 @@
 __pycache__/
 *.py[cod]
 
+#WiCe
+local_config.py
+instance/
+
 # C extensions
 *.so
 
@@ -18,6 +22,9 @@ lib64/
 parts/
 sdist/
 var/
+bin/
+local/
+include/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -25,6 +32,7 @@ var/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+pip-selfcheck.json
 
 # Unit test / coverage reports
 htmlcov/
@@ -47,13 +55,12 @@ coverage.xml
 
 # Django stuff:
 *.log
-*.pot
 
 # Sphinx documentation
 docs/_build/
 
-# SQLite database
-lbc.sqlite
+# DB
+*.sqlite
 
-# lbc Conf file
-lbc.conf
+#MacOS
+.DS_Store
