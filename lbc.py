@@ -7,7 +7,7 @@ from datetime import datetime
 from time import sleep
 from lxml.html import fromstring
 from PyRSS2Gen import RSS2, RSSItem, Guid
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 import logging, logging.handlers
 
 
@@ -164,19 +164,19 @@ def scrape_offers(offer_urls):
                 tree = fromstring(page.text)
                 for n in tree.xpath('//section[@class="OjX8R"]//*'):
                     if (n.tag == 'div') and 'data-qa-id' in n.attrib and n.attrib['data-qa-id'] == "adview_title":
-                        article['title'] = unicode(n.text_content().strip())
+                        article['title'] = n.text_content().strip()
                     elif n.tag == 'div' and 'data-qa-id' in n.attrib and n.attrib['data-qa-id'] == 'adview_description_container':
                         descr = n.find('div').find('span')
-                        article['description'] += "\n"+ unicode(descr.text.strip())
+                        article['description'] += "\n"+ descr.text.strip()
                         for l in descr:
                             if l.text:
-                                article['description'] += "\n"+ unicode(l.text.strip())
+                                article['description'] += "\n"+ l.text.strip()
                             elif l.tail:
-                                article['description'] += "\n" + unicode(l.tail.strip())
+                                article['description'] += "\n" + l.tail.strip()
                     elif n.tag == 'div' and 'data-qa-id' in n.attrib and n.attrib['data-qa-id'] == 'adview_price':
-                        prix = u"Prix : " + unicode(n.text_content().strip())
+                        prix = u"Prix : " + n.text_content().strip()
                     elif n.tag == 'div' and 'data-qa-id' in n.attrib and n.attrib['data-qa-id'] == 'adview_location_informations':
-                        adresse = u"Adresse : " + unicode(n.find('span').text_content().strip())
+                        adresse = u"Adresse : " + n.find('span').text_content().strip()
                     elif not img and n.tag == 'img' and 'alt' in n.attrib and n.attrib['alt'].startswith("image-galerie"):
                         img = '<img src="%s" align="right" />' % n.attrib['src']
 
@@ -197,11 +197,11 @@ def scrape_offers(offer_urls):
             else:
                 curs.execute('SELECT title, description, date FROM offers_seen WHERE id = ?;', (id_offer, ))
                 for title, description, date in curs:
-                    article['title'] = title
+                    article['title'] = str(title)
                     #article['link'] = o
-                    article['description'] = description
+                    article['description'] = str(description)
                     #article['guid'] = Guid(o)
-                    article['pubDate'] = datetime.strptime(date.decode('utf-8'), '%Y-%m-%d %H:%M:%S')
+                    article['pubDate'] = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
 
             items.append(article)
 
@@ -211,7 +211,7 @@ def scrape_offers(offer_urls):
 
 if __name__ == '__main__':
 
-    config = ConfigParser()
+    config = ConfigParser(interpolation=None)
     config.read("lbc.conf")
     my_searchs = []
     ovhServer = False
@@ -225,7 +225,7 @@ if __name__ == '__main__':
             ovhIp = config.get(s, 'Ip')
         else:
             File = s
-            Name = config.get(s, 'Name').decode('utf-8')
+            Name = str(config.get(s, 'Name'))
             Link = config.get(s, 'Link')
             my_searchs.append( (Name, Link, File, ) )
 
@@ -234,7 +234,7 @@ if __name__ == '__main__':
         new, offers = scrape_offers(scrape_url(url))
         logger.info("%s : %d nouvelle(s) annonce(s)" % (title, new))
         rss = RSS2(
-            title = title.encode('utf-8'), link = os.path.join(URL_root, filename), description = title.encode('utf-8'), lastBuildDate = datetime.now(),
+            title = title, link = os.path.join(URL_root, filename), description = title, lastBuildDate = datetime.now(),
             items = [ RSSItem(**article) for article in offers ]
         )
         with open(os.path.join(RSS_root, filename), "w") as fic:
