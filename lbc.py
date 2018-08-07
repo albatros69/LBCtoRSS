@@ -74,7 +74,7 @@ def extract_offers(url):
         #return []
         raise
     else:
-        return tree.xpath('//section[contains(@class, "tabsContent")]//a[contains(@class, "list_item")]/@href')
+        return tree.xpath('//div[contains(@class, "react-tabs")]//a[contains(@class, "trackable")]/@href')
 
 
 re_id = re.compile('.*/(?P<id>[0-9]+)\.htm.*')
@@ -85,6 +85,10 @@ conn.execute('CREATE TABLE IF NOT EXISTS offers_seen (id INTEGER PRIMARY KEY, ti
 
 
 def scrape_url(url):
+    if url.startswith('//'):
+        url = 'https:' + url
+    if url.startswith('/'):
+        url = 'https://www.leboncoin.fr' + url
     if ovhServer:
         url = url.replace("www.leboncoin.fr", ovhIp)
     try:
@@ -101,14 +105,16 @@ def scrape_url(url):
 
     # Handling of next pages via paging links
     already_seen = []
-    next_pages = list(tree.xpath('//div[contains(@class, "pagination_links_container")]//a/@href'))
+    next_pages = list(tree.xpath('//nav[@class="nMaRG"]//a/@href'))
     errors = 0
     while next_pages and errors <= 10:
         u = next_pages.pop(0)
+        if u.startswith('//'):
+            u = 'https:' + u
+        if u.startswith('/'):
+            u = 'https://www.leboncoin.fr' + u
         if ovhServer:
             u = u.replace("www.leboncoin.fr", ovhIp)
-        if not u.startswith('http'):
-            u = 'https:' + u
         if u in already_seen: continue
 
         try:
@@ -130,10 +136,12 @@ def scrape_offers(offer_urls):
     new_offers = 0
     for o in offer_urls:
         m = re_id.match(o)
+        if o.startswith('//'):
+            o = 'https:' + o
+        if o.startswith('/'):
+            o = 'https://www.leboncoin.fr' + o
         if ovhServer:
             o = o.replace("www.leboncoin.fr", ovhIp)
-        if not o.startswith('http'):
-            o = 'https:' + o
         if not m:
             continue
         else:
