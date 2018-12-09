@@ -177,6 +177,7 @@ if __name__ == '__main__':
         )
         with open(os.path.join(RSS_root, filename), "w") as fic:
             rss.write_xml(fic, encoding='utf-8')
+        sleep(600*random())
 
     logger.info("Fin...")
 
