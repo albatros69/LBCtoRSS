@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import requests, sqlite3, re, os
-from random import random, choice
-from datetime import datetime
-from time import sleep
-from lxml.html import fromstring
-from PyRSS2Gen import RSS2, RSSItem, Guid
-from configparser import ConfigParser
+import json
 import logging, logging.handlers
+import os
+from configparser import ConfigParser
+from datetime import datetime
+from random import choice, random
+from time import sleep
+
+import requests
+from lxml.html import fromstring
+from PyRSS2Gen import RSS2, Guid, RSSItem
 
 
 logger = logging.getLogger(__name__)
@@ -56,165 +59,73 @@ user_agents = (
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.76 Safari/537.36',
 )
-def req_headers():
-    return { 'User-Agent': choice(user_agents) }
 
+limit = 35
 
-def extract_offers(url):
+def scrape_offers(search_parameters):
+
+    search_parameters['limit'] = limit
+    search_parameters['offset'] = 0
     try:
-        if isinstance(url, requests.Response):
-            tree = fromstring(url.text)
-        else:
-            sleep(2*random())
-            page = requests.get(url, headers=req_headers(), timeout=2)
-            tree = fromstring(page.text)
-    except Exception as e:
-        #logger.info(url)
-        #logger.exception(e)
-        #return []
-        raise
-    else:
-        return tree.xpath('//div[contains(@class, "react-tabs")]//a[contains(@class, "trackable")]/@href')
-
-
-re_id = re.compile('.*/(?P<id>[0-9]+)\.htm.*')
-conn = sqlite3.connect('lbc.sqlite')
-curs = conn.cursor()
-
-conn.execute('CREATE TABLE IF NOT EXISTS offers_seen (id INTEGER PRIMARY KEY, title TEXT, link TEXT, description TEXT, date TEXT default CURRENT_TIMESTAMP)')
-
-
-def scrape_url(url):
-    if url.startswith('//'):
-        url = 'https:' + url
-    if url.startswith('/'):
-        url = 'https://www.leboncoin.fr' + url
-    if ovhServer:
-        url = url.replace("www.leboncoin.fr", ovhIp)
-    try:
-        main_page = requests.get(url, headers=req_headers(), timeout=5)
-    except Exception as e:
-        logger.info('Timeout ### %s' % (url,) )
+        page = sess.post('https://api.leboncoin.fr/finder/search', json=search_parameters, timeout=5)
+    except requests.exceptions.Timeout:
+        logger.info('Timeout # first page')
         #logger.exception(e)
         return []
 
-    tree = fromstring(main_page.text)
+    data = json.loads(page.text)
 
     offers = []
-    offers.extend(extract_offers(main_page))
+    offers.extend(extract_offers(data))
 
-    # Handling of next pages via paging links
-    already_seen = []
-    next_pages = list(tree.xpath('//nav[@class="nMaRG"]//a/@href'))
-    errors = 0
-    while next_pages and errors <= 10:
-        u = next_pages.pop(0)
-        if u.startswith('//'):
-            u = 'https:' + u
-        if u.startswith('/'):
-            u = 'https://www.leboncoin.fr' + u
-        if ovhServer:
-            u = u.replace("www.leboncoin.fr", ovhIp)
-        if u in already_seen: continue
+    if data['total'] <= limit:
+        return data['total'], offers
+    else:
+        errors = 0
+        for offset in range(limit, data['total'], limit):
+            search_parameters['offset'] = offset
 
-        try:
-            offers.extend(extract_offers(u))
-        except requests.exceptions.Timeout:
-            errors += 1
-            sleep(2*random())
-            logger.info("Timeout %d ### %s" % (errors, u))
-            next_pages.append(u)
-        else:
-            already_seen.append(u)
+            try:
+                page = sess.post('https://api.leboncoin.fr/finder/search', json=search_parameters, timeout=5)
+                offers.extend(extract_offers(json.loads(page.text)))
+                sleep(4*random())
+            except requests.exceptions.Timeout:
+                errors += 1
+                sleep(4*random())
+                logger.info("Timeout %d # %s" % (errors, offset))
 
-    return offers
+        return data['total'], offers
 
 
-def scrape_offers(offer_urls):
-
+def extract_offers(json_data):
     items = []
-    new_offers = 0
-    for o in offer_urls:
-        m = re_id.match(o)
-        if o.startswith('//'):
-            o = 'https:' + o
-        if o.startswith('/'):
-            o = 'https://www.leboncoin.fr' + o
-        if ovhServer:
-            o = o.replace("www.leboncoin.fr", ovhIp)
-        if not m:
-            continue
-        else:
-            id_offer = m.group('id')
-            article = { 'title': '', 'link': o, 'description': '', 'guid': Guid(o), 'pubDate': datetime.now(), }
-            prix = ''
-            adresse = ''
-            img = ''
-            in_descr = False
+    for o in json_data['ads']:
+        # id_offer = o['list_id']
+        article = {
+            'title': o['subject'],
+            'link': o['url'],
+            'description': o['body'],
+            'guid': Guid(o['url']),
+            'pubDate': datetime.strptime(o['first_publication_date'], '%Y-%m-%d %H:%M:%S' ),
+        }
+        if o['price']:
+            prix = o['price'][0]
+        adresse = o['location']['city_label']
+        if o['images']['nb_images'] > 0:
+            img = '<img href="{}" align="right" />'.format(o['images']['small_url'])
 
-            curs.execute('INSERT OR IGNORE INTO offers_seen (id) VALUES (?);', (id_offer, ))
-            if curs.rowcount > 0:
-                try:
-                    page = requests.get(o, headers=req_headers(), timeout=5)
-                except requests.exceptions.Timeout:
-                    # Pour récupérer l'annonce à la prochaine exécution
-                    curs.execute('DELETE FROM offers_seen WHERE id=?;', (id_offer, ))
-                    logger.info('Timeout offer ### %s' % (o, ))
-                    sleep(2*random())
-                    continue
+        if adresse:
+            article['description'] = "Adresse : " + adresse + "\n" + article['description'].strip()
+        if prix:
+            article['description'] = "Prix : {} €".format(prix) + "\n" + article['description'].strip()
+        if article['description'] and img:
+            article['description'] = "{}<pre>{}</pre>".format(img, article['description'].strip())
+        elif article['description']:
+            article['description'] = "<pre>{}</pre>".format(article['description'].strip())
 
-                if page.status_code != 200:
-                    curs.execute('DELETE FROM offers_seen WHERE id=?;', (id_offer, ))
-                    continue
+        items.append(article)
 
-                new_offers += 1
-
-                tree = fromstring(page.text)
-                for n in tree.xpath('//section[@class="OjX8R"]//*'):
-                    if (n.tag == 'div') and 'data-qa-id' in n.attrib and n.attrib['data-qa-id'] == "adview_title":
-                        article['title'] = n.text_content().strip()
-                    elif n.tag == 'div' and 'data-qa-id' in n.attrib and n.attrib['data-qa-id'] == 'adview_description_container':
-                        descr = n.find('div').find('span')
-                        article['description'] += "\n"+ descr.text.strip()
-                        for l in descr:
-                            if l.text:
-                                article['description'] += "\n"+ l.text.strip()
-                            elif l.tail:
-                                article['description'] += "\n" + l.tail.strip()
-                    elif n.tag == 'div' and 'data-qa-id' in n.attrib and n.attrib['data-qa-id'] == 'adview_price':
-                        prix = u"Prix : " + n.text_content().strip()
-                    elif n.tag == 'div' and 'data-qa-id' in n.attrib and n.attrib['data-qa-id'] == 'adview_location_informations':
-                        adresse = u"Adresse : " + n.find('span').text_content().strip()
-                    elif not img and n.tag == 'img' and 'alt' in n.attrib and n.attrib['alt'].startswith("image-galerie"):
-                        img = '<img src="%s" align="right" />' % n.attrib['src']
-
-                if adresse:
-                    article['description'] = adresse + "\n" + article['description']
-                if prix:
-                    article['description'] = prix + "\n" + article['description']
-                if article['description'] and img:
-                    article['description'] = "%s<pre>%s</pre>" % (img.strip(), article['description'].strip(), )
-                elif article['description']:
-                    article['description'] = "<pre>%s</pre>" % (article['description'].strip(), )
-
-                if ovhServer:
-                    article['link'] = article['link'].replace(ovhIp, "www.leboncoin.fr")
-
-                curs.execute('UPDATE offers_seen SET title = ?, link = ?, description = ? WHERE id = ?;',
-                    (article['title'], article['link'], article['description'], id_offer) )
-            else:
-                curs.execute('SELECT title, description, date FROM offers_seen WHERE id = ?;', (id_offer, ))
-                for title, description, date in curs:
-                    article['title'] = str(title)
-                    #article['link'] = o
-                    article['description'] = str(description)
-                    #article['guid'] = Guid(o)
-                    article['pubDate'] = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
-
-            items.append(article)
-
-    conn.commit()
-    return new_offers, items
+    return items
 
 
 if __name__ == '__main__':
@@ -234,12 +145,31 @@ if __name__ == '__main__':
         else:
             File = s
             Name = str(config.get(s, 'Name'))
-            Link = config.get(s, 'Link')
-            my_searchs.append( (Name, Link, File, ) )
+            Search = json.loads(config.get(s, 'Search'))
+            my_searchs.append( (Name, Search, File, ) )
 
     logger.info("Démarrage...")
-    for title, url, filename in my_searchs:
-        new, offers = scrape_offers(scrape_url(url))
+    sleep(3600*random())
+    logger.info("Fin du sleep initial...")
+
+    sess = requests.Session()
+    sess.headers.update({
+        'User-Agent': choice(user_agents),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'fr-FR,fr;q=0.8,en-GB;q=0.5,en;q=0.3',
+        'Accept-Encoding': 'gzip, deflate, br',
+    })
+    sess.get('https://www.leboncoin.fr/annonces/offres/rhone_alpes/')
+    sess.headers.update({
+        'api_key':'ba0c2dad52b3ec',
+        'Referer': 'https://www.leboncoin.fr/annonces/offres/rhone_alpes/',
+        'Content-Type': 'text/plain;charset=UTF-8',
+        'Origin': 'https://www.leboncoin.fr',
+    })
+    sleep(4*random())
+
+    for title, search_parameters, filename in my_searchs:
+        new, offers = scrape_offers(search_parameters)
         logger.info("%s : %d nouvelle(s) annonce(s)" % (title, new))
         rss = RSS2(
             title = title, link = os.path.join(URL_root, filename), description = title, lastBuildDate = datetime.now(),
@@ -248,7 +178,5 @@ if __name__ == '__main__':
         with open(os.path.join(RSS_root, filename), "w") as fic:
             rss.write_xml(fic, encoding='utf-8')
 
-    conn.commit()
-    conn.close()
     logger.info("Fin...")
 
