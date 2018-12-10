@@ -110,7 +110,7 @@ def extract_offers(json_data):
         if o['price']:
             prix = o['price'][0]
         else:
-            price = 0
+            prix = 0
         adresse = o['location']['city_label']
         if o['images']['nb_images'] > 0:
             img = '<img src="{}" align="right" referrerpolicy="no-referrer" />'.format(o['images']['small_url'])
