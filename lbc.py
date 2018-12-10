@@ -67,6 +67,7 @@ def scrape_offers(search_parameters):
     search_parameters['offset'] = 0
     try:
         page = sess.post('https://api.leboncoin.fr/finder/search', json=search_parameters, timeout=5)
+        sleep(10*random())
     except requests.exceptions.Timeout:
         logger.info('Timeout # first page')
         #logger.exception(e)
