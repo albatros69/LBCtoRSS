@@ -1,14 +1,12 @@
 [Conf]
-Directory: /var/www/html/
+Directory: /tmp
 Url: http://www.my_web_site.wtf/
-
-#[Ovh]
-#Ip: 193.164.196.13
 
 [location_idf.rss]
 Name: Locations IdF
-Link: https://www.leboncoin.fr/locations/offres/ile_de_france/?f=a&th=1&mrs=350&mre=750
+Search: {"limit":35,"limit_alu":3,"filters":{"category":{"id":"10"},"enums":{"ad_type":["offer"]},"location":{"regions":["12"]},"keywords":{},"ranges":{}}}
 
 [C4_71.rss]
 Name: Citroën C4 Bourgogne
-Link: https://www.leboncoin.fr/voitures/offres/bourgogne/?f=a&th=1&q=C4
+Search: {"limit":35,"limit_alu":3,"filters":{"category":{"id":"2"},"enums":{"ad_type":["offer"]},"location":{"regions":["5"]},"keywords":{"text":"C4"},"ranges":{}}}
+
