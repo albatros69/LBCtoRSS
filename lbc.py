@@ -6,11 +6,10 @@ import logging, logging.handlers
 import os
 from configparser import ConfigParser
 from datetime import datetime
-from random import choice, random
+from random import choice, random, seed
 from time import sleep
 
 import requests
-from lxml.html import fromstring
 from PyRSS2Gen import RSS2, Guid, RSSItem
 
 
@@ -88,10 +87,10 @@ def scrape_offers(search_parameters):
             try:
                 page = sess.post('https://api.leboncoin.fr/finder/search', json=search_parameters, timeout=5)
                 offers.extend(extract_offers(json.loads(page.text)))
-                sleep(4*random())
+                sleep(10*random())
             except requests.exceptions.Timeout:
                 errors += 1
-                sleep(4*random())
+                sleep(10*random())
                 logger.info("Timeout %d # %s" % (errors, offset))
 
         return data['total'], offers
@@ -110,9 +109,13 @@ def extract_offers(json_data):
         }
         if o['price']:
             prix = o['price'][0]
+        else:
+            price = 0
         adresse = o['location']['city_label']
         if o['images']['nb_images'] > 0:
-            img = '<img href="{}" align="right" />'.format(o['images']['small_url'])
+            img = '<img src="{}" align="right" referrerpolicy="no-referrer" />'.format(o['images']['small_url'])
+        else:
+            img = ''
 
         if adresse:
             article['description'] = "Adresse : " + adresse + "\n" + article['description'].strip()
@@ -129,6 +132,8 @@ def extract_offers(json_data):
 
 
 if __name__ == '__main__':
+
+    seed()
 
     config = ConfigParser(interpolation=None)
     config.read("lbc.conf")
@@ -166,18 +171,18 @@ if __name__ == '__main__':
         'Content-Type': 'text/plain;charset=UTF-8',
         'Origin': 'https://www.leboncoin.fr',
     })
-    sleep(4*random())
+    sleep(10*random())
 
     for title, search_parameters, filename in my_searchs:
         new, offers = scrape_offers(search_parameters)
-        logger.info("%s : %d nouvelle(s) annonce(s)" % (title, new))
+        logger.info("%s : %d annonces" % (title, new))
         rss = RSS2(
             title = title, link = os.path.join(URL_root, filename), description = title, lastBuildDate = datetime.now(),
             items = [ RSSItem(**article) for article in offers ]
         )
         with open(os.path.join(RSS_root, filename), "w") as fic:
             rss.write_xml(fic, encoding='utf-8')
-        sleep(600*random())
+        sleep(30*random())
 
     logger.info("Fin...")
 
