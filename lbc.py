@@ -104,28 +104,22 @@ def extract_offers(json_data):
         article = {
             'title': o['subject'],
             'link': o['url'],
-            'description': o['body'],
+            'description': o['body'].strip(),
             'guid': Guid(o['url']),
-            'pubDate': datetime.strptime(o['first_publication_date'], '%Y-%m-%d %H:%M:%S' ),
+            'pubDate': datetime.strptime(o['first_publication_date'], '%Y-%m-%d %H:%M:%S'),
         }
         if o['price']:
-            prix = o['price'][0]
+            prix = "Prix : {} €".format(o['price'][0])
         else:
-            prix = 0
-        adresse = o['location']['city_label']
+            prix = ''
+        adresse = "Adresse : {}\n".format(o['location']['city_label'])
+        article['description'] =  prix + adresse + "\n" + article['description']
+
         if o['images']['nb_images'] > 0:
             img = '<img src="{}" align="right" referrerpolicy="no-referrer" />'.format(o['images']['small_url'])
         else:
             img = ''
-
-        if adresse:
-            article['description'] = "Adresse : " + adresse + "\n" + article['description'].strip()
-        if prix:
-            article['description'] = "Prix : {} €".format(prix) + "\n" + article['description'].strip()
-        if article['description'] and img:
-            article['description'] = "{}<pre>{}</pre>".format(img, article['description'].strip())
-        elif article['description']:
-            article['description'] = "<pre>{}</pre>".format(article['description'].strip())
+        article['description'] = "{}<pre>{}</pre>".format(img, article['description'].strip())
 
         items.append(article)
 
