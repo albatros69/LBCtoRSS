@@ -108,18 +108,19 @@ def extract_offers(json_data):
             'guid': Guid(o['url']),
             'pubDate': datetime.strptime(o['first_publication_date'], '%Y-%m-%d %H:%M:%S'),
         }
+
         if o['price']:
-            prix = "Prix : {} €".format(o['price'][0])
+            prix = "Prix : {} €\n".format(o['price'][0])
         else:
             prix = ''
         adresse = "Adresse : {}\n".format(o['location']['city_label'])
-        article['description'] =  prix + adresse + "\n" + article['description']
+        article['description'] = prix + adresse + "\n" + article['description']
 
         if o['images']['nb_images'] > 0:
             img = '<img src="{}" align="right" referrerpolicy="no-referrer" />'.format(o['images']['small_url'])
         else:
             img = ''
-        article['description'] = "{}<pre>{}</pre>".format(img, article['description'].strip())
+        article['description'] = "{}<pre>{}</pre>".format(img, article['description'])
 
         items.append(article)
 
