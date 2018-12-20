@@ -67,7 +67,7 @@ def scrape_offers(search_parameters):
     search_parameters['offset'] = 0
     try:
         page = sess.post('https://api.leboncoin.fr/finder/search', json=search_parameters, timeout=5)
-        sleep(10*random())
+        sleep(20*random())
     except requests.exceptions.Timeout:
         logger.error('Timeout # first page')
         #logger.exception(e)
@@ -92,15 +92,15 @@ def scrape_offers(search_parameters):
             try:
                 page = sess.post('https://api.leboncoin.fr/finder/search', json=search_parameters, timeout=5)
                 offers.extend(extract_offers(json.loads(page.text)))
-                sleep(10*random())
+                sleep(20*random())
             except requests.exceptions.Timeout:
                 errors += 1
                 logger.info("Timeout %d # %s" % (errors, offset))
-                sleep(10*random())
+                sleep(20*random())
             except ValueError:
                 errors += 1
                 logger.error('JSON decode error')
-                sleep(10*random())
+                sleep(20*random())
 
         return data['total'], offers
 
@@ -175,7 +175,7 @@ if __name__ == '__main__':
         'Content-Type': 'text/plain;charset=UTF-8',
         'Origin': 'https://www.leboncoin.fr',
     })
-    sleep(10*random())
+    sleep(30*random())
 
     for title, search_parameters, filename in my_searchs:
         new, offers = scrape_offers(search_parameters)
@@ -186,7 +186,7 @@ if __name__ == '__main__':
         )
         with open(os.path.join(RSS_root, filename), "w") as fic:
             rss.write_xml(fic, encoding='utf-8')
-        sleep(30*random())
+        sleep(60*random())
 
     logger.info("Fin...")
 
