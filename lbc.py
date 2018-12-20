@@ -69,9 +69,13 @@ def scrape_offers(search_parameters):
         page = sess.post('https://api.leboncoin.fr/finder/search', json=search_parameters, timeout=5)
         sleep(10*random())
     except requests.exceptions.Timeout:
-        logger.info('Timeout # first page')
+        logger.error('Timeout # first page')
         #logger.exception(e)
-        return []
+        return 0, []
+    except ValueError:
+        logger.error('JSON decode error')
+        #logger.exception(e)
+        return 0, []
 
     data = json.loads(page.text)
 
@@ -91,8 +95,12 @@ def scrape_offers(search_parameters):
                 sleep(10*random())
             except requests.exceptions.Timeout:
                 errors += 1
-                sleep(10*random())
                 logger.info("Timeout %d # %s" % (errors, offset))
+                sleep(10*random())
+            except ValueError:
+                errors += 1
+                logger.error('JSON decode error')
+                sleep(10*random())
 
         return data['total'], offers
 
@@ -109,10 +117,10 @@ def extract_offers(json_data):
             'pubDate': datetime.strptime(o['first_publication_date'], '%Y-%m-%d %H:%M:%S'),
         }
 
-        if o['price']:
+        if 'price' in o and o['price']:
             prix = "Prix : {} €\n".format(o['price'][0])
         else:
-            prix = ''
+            prix = ""
         adresse = "Adresse : {}\n".format(o['location']['city_label'])
         article['description'] = prix + adresse + "\n" + article['description']
 
