@@ -65,8 +65,11 @@ def scrape_offers(search_parameters):
 
     search_parameters['limit'] = limit
     search_parameters['offset'] = 0
+    offers = []
     try:
         page = sess.post('https://api.leboncoin.fr/finder/search', json=search_parameters, timeout=5)
+        data = json.loads(page.text)
+        offers.extend(extract_offers(data))
         sleep(20*random())
     except requests.exceptions.Timeout:
         logger.error('Timeout # first page')
@@ -76,11 +79,6 @@ def scrape_offers(search_parameters):
         logger.error('JSON decode error')
         #logger.exception(e)
         return 0, []
-
-    data = json.loads(page.text)
-
-    offers = []
-    offers.extend(extract_offers(data))
 
     if data['total'] <= limit:
         return data['total'], offers
@@ -107,7 +105,7 @@ def scrape_offers(search_parameters):
 
 def extract_offers(json_data):
     items = []
-    for o in json_data['ads']:
+    for o in json_data.get('ads', []):
         # id_offer = o['list_id']
         article = {
             'title': o['subject'],
