@@ -80,7 +80,10 @@ def scrape_offers(search_parameters):
         #logger.exception(e)
         return 0, []
 
-    if data['total'] <= limit:
+    if 'total' not in data:
+        logger.error('no total in data')
+        return len(offers), offers
+    elif data['total'] <= limit:
         return data['total'], offers
     else:
         errors = 0
@@ -178,6 +181,8 @@ if __name__ == '__main__':
     for title, search_parameters, filename in my_searchs:
         new, offers = scrape_offers(search_parameters)
         logger.info("%s : %d annonces" % (title, new))
+        if not new:
+            continue
         rss = RSS2(
             title = title, link = os.path.join(URL_root, filename), description = title, lastBuildDate = datetime.now(),
             items = [ RSSItem(**article) for article in offers ]
