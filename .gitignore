@@ -2,10 +2,6 @@
 __pycache__/
 *.py[cod]
 
-#WiCe
-local_config.py
-instance/
-
 # C extensions
 *.so
 
@@ -64,3 +60,6 @@ docs/_build/
 
 #MacOS
 .DS_Store
+
+*.json
+*.conf
