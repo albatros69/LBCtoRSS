@@ -80,8 +80,8 @@ def scrape_offers(search_parameters):
         #logger.exception(e)
         return 0, []
 
-    if 'total' not in data:
-        logger.error('no total in data')
+    if page.status_code != 200:
+        logger.error('LBC unavailable: [%d] %s' % (page.status_code, page.text[:80]))
         return len(offers), offers
     elif data['total'] <= limit:
         return data['total'], offers
